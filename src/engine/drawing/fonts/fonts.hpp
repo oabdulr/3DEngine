@@ -28,7 +28,7 @@ public:
     font_texture* generate_string(SDL_Renderer* pRenderer, std::string data, int psize = 12, font* font = nullptr, color4 color = {255, 255, 255, 0}){
         if (!font)
             font = cached_fonts["arial.ttf"];
-        std::string name_size = data + std::to_string(psize);
+        std::string name_size = data + std::to_string(psize) + color.to_string();
         if (this->cached_textures.find(name_size) != this->cached_textures.end())
             return this->cached_textures[name_size];
 

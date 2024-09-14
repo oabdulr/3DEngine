@@ -17,4 +17,8 @@ public:
     operator SDL_Color () const{
         return { (Uint8)this->r, (Uint8)this->g, (Uint8)this->b, (Uint8)this->alpha };
     }
+
+    std::string to_string(){
+        return std::to_string(this->r) + std::to_string(this->g) + std::to_string(this->b) + std::to_string(this->alpha);
+    }
 };
