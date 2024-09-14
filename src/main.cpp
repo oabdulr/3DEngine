@@ -23,9 +23,13 @@ int main(int argc, char** argv) {
 
         pDrawing->set_draw_color(0, 100, 100, 100);
         pDrawing->render_clear();
-        pDrawing->set_draw_color(0, 0, 0, 255);
+        pDrawing->set_draw_color({0, 0, 0});
         pDrawing->render_preset();
-    }
 
-    return pEngine->quit_all();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    
+    pEngine->quit();
+    pDrawing->implode();
+    return EXIT_SUCCESS;
 }

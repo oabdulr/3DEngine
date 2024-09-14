@@ -6,6 +6,7 @@ class vec2 {
 public:
     float x, y;
 
+    vec2() : x(0), y(0) { }
     vec2(float x, float y) : x(x), y(y) { }
 
     vec2 operator+(const vec2 &r) const {

@@ -1,8 +1,6 @@
 #include "engine.h"
 
-bool engine::quit_all(){
-    // todo, loop all textures and death
-    //SDL_DestroyTexture(texture1);
+bool engine::quit(){
     TTF_Quit();
 
     SDL_DestroyRenderer(this->pRenderer);

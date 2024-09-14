@@ -10,7 +10,7 @@ class engine
 public:
     bool isRunning = true;
     
-    bool quit_all();
+    bool quit();
     bool init();
 
     SDL_Window* pWindow;
