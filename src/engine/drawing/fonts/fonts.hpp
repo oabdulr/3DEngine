@@ -28,12 +28,12 @@ public:
     font_texture* generate_string(SDL_Renderer* pRenderer, std::string data, int psize = 12, font* font = nullptr, color4 color = {255, 255, 255, 0}){
         if (!font)
             font = cached_fonts["arial.ttf"];
-        std::string name_size = data + std::to_string(psize) + color.to_string();
-        if (this->cached_textures.find(name_size) != this->cached_textures.end())
-            return this->cached_textures[name_size];
+        std::string storage_name = data + std::to_string(psize) + color.to_string();
+        if (this->cached_textures.find(storage_name) != this->cached_textures.end())
+            return this->cached_textures[storage_name];
 
         font_texture* tex = new font_texture(font, data, color, psize, pRenderer);
-        cached_textures.emplace(name_size, tex);
+        cached_textures.emplace(storage_name, tex);
         return tex;
     }
 

@@ -10,7 +10,6 @@ public:
         this->pFont = new fonts();
     }
 
-   
     rect* render_string(vec2 pos, std::string data, color4 color, int psize = 12){
         font_texture* tex = this->pFont->generate_string(this->pRenderer, data, psize, nullptr, color);
         SDL_Rect rect = *tex->set_pos(pos);
