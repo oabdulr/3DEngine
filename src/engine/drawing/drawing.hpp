@@ -40,6 +40,10 @@ public:
         return render_string(pos, data, color, psize);
     }
 
+    void render_line(vec2 start, vec2 end){
+        SDL_RenderDrawLine(pRenderer, start.x, start.y, end.x, end.y);
+    }
+
     void set_draw_color(color4 color){
         SDL_SetRenderDrawColor(pRenderer, color.r, color.g, color.b, color.alpha);
     }

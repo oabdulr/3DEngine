@@ -50,4 +50,14 @@ public:
         }
         return *this;
     }
+
+    std::string to_string(){
+        const int SIZE = 10;
+        char bufferx[SIZE];
+        char buffery[SIZE];
+        std::snprintf(bufferx, SIZE, "%.1f", this->x);
+        std::snprintf(buffery, SIZE, "%.1f", this->y);
+
+        return "(" + std::string(bufferx) + ", " + std::string(buffery) + ")";
+    }
 };

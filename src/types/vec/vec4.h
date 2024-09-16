@@ -52,4 +52,8 @@ public:
         }
         return *this;
     }
+
+    std::string to_string(){
+        return "(" + std::to_string(this->x) + ", " + std::to_string(this->y) + ", " + std::to_string(this->z) + ", " + std::to_string(this->w) + ")";
+    }
 };
