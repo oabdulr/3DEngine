@@ -34,6 +34,10 @@ bool engine::init(){
     return EXIT_SUCCESS;
 }
 
+bool engine::should_limit(){
+    return  (frame_time > 0) ? this->frame_time > 1000.f / this->FPS_LIMIT : false;
+}
+
 int engine::mesure_fps(bool end){
     if (!end){
         this->start_time = SDL_GetTicks();

@@ -2,7 +2,7 @@
 #include "engine/engine.h"
 
 int main(int argc, char** argv) {
-    engine* pEngine = new engine(rect(200, 200, 1280, 720));
+    engine* pEngine = new engine(rect(100, 100, 1280, 720));
     if (int init = pEngine->init())
         return init;
 
@@ -19,6 +19,10 @@ int main(int argc, char** argv) {
         pEngine->mesure_fps(false);
         pEngine->events();
 
+        if (pEngine->should_limit())
+            continue;
+        
+        
         pEngine->pDrawing->set_draw_color(0, 100, 100, 100);
         pEngine->pDrawing->render_clear();
         pEngine->pDrawing->set_draw_color({0, 0, 0});
@@ -34,7 +38,7 @@ int main(int argc, char** argv) {
     
         int fps = pEngine->mesure_fps(true);
         pEngine->set_title(std::string("FPS: ") + std::to_string(fps));
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     
     pEngine->quit();
