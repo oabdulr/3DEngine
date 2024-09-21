@@ -4,9 +4,9 @@
 class bound {
 public:
     float w, h = 0;
-    vec3 position;
     float scale = 10.f;
-    
+    vec3 position;
+
     bound() {}
     bound(float x, float y, float z, float w, float h) : w(w), h(h), position(x, y, z) {}
 

@@ -35,17 +35,33 @@ bool engine::init(){
 }
 
 bool engine::should_limit(){
-    return  (frame_time > 0) ? this->frame_time > 1000.f / this->FPS_LIMIT : false;
+    if (this->delta > 1000.f / this->FPS_LIMIT){
+        this->delta = 0;
+        return true;
+    }
+
+    return  false;
+}
+
+int engine::mesure_ticks(bool end){
+    if (!end){
+        this->tic_start_time = SDL_GetTicks();
+        return 0;
+    }
+
+    this->tic_frame_time = SDL_GetTicks() - this->tic_start_time;
+    this->delta += this->tic_frame_time;
+    return this->tic_frame_time;
 }
 
 int engine::mesure_fps(bool end){
     if (!end){
-        this->start_time = SDL_GetTicks();
+        this->fps_start_time = SDL_GetTicks();
         return 0;
     }
 
-    this->frame_time = SDL_GetTicks()-start_time;
-    this->fps = (frame_time > 0) ? 1000.0f / frame_time : 0.0f;
+    this->fps_frame_time = SDL_GetTicks() - this->fps_start_time;
+    this->fps = (this->fps_frame_time > 0) ? 1000.0f / this->fps_frame_time : 0.0f;
     return this->fps;
 }
 

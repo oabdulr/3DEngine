@@ -12,6 +12,7 @@ public:
     bool init();
     bool should_limit();
     int mesure_fps(bool end);
+    int mesure_ticks(bool end);
 
     camera* create_camera();
     camera* get_pCamera();
@@ -25,11 +26,13 @@ public:
     SDL_Window* pWindow;
     SDL_Renderer* pRenderer;
     drawing* pDrawing;
+
+    float fps = 0.f;
 private:
     const float FPS_LIMIT = 144.f;
     
-    Uint32 start_time, frame_time = 0;
-    float fps = 0.f;
+    Uint32 fps_start_time, fps_frame_time = 0;
+    Uint32 tic_start_time, tic_frame_time, delta = 0;
     rect win_size;
 
     camera* pCamera;
