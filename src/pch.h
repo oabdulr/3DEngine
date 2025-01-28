@@ -15,6 +15,7 @@
 
 #include "types/vec/vec2.h"
 #include "types/vec/vec3.h"
+#include "types/matrix/matrix4x4.h"
 #include "types/vec/vec4.h"
 #include "types/vec/rect.h"
 #include "types/vec/quat.h"

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cmath>
 
 class vec4 {
@@ -51,6 +50,15 @@ public:
             return vec4(this->x / len, this->y / len, this->z / len, this->w / len);
         }
         return *this;
+    }
+
+    vec4 operator*(const matrix4x4& mat) const {
+        return {
+            x * mat(0, 0) + y * mat(0, 1) + z * mat(0, 2) + w * mat(0, 3),
+            x * mat(1, 0) + y * mat(1, 1) + z * mat(1, 2) + w * mat(1, 3),
+            x * mat(2, 0) + y * mat(2, 1) + z * mat(2, 2) + w * mat(2, 3),
+            x * mat(3, 0) + y * mat(3, 1) + z * mat(3, 2) + w * mat(3, 3)
+        };
     }
 
     std::string to_string(){

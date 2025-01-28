@@ -60,4 +60,8 @@ public:
 
         return "(" + std::string(bufferx) + ", " + std::string(buffery) + ")";
     }
+
+    const char* to_cstring(){
+        return to_string().c_str();
+    }
 };

@@ -13,24 +13,70 @@ vec2 camera::w2s(vec3 pos, float scale){
 }
 
 void camera::render(std::unordered_map<std::string, gameobject*> &objs){
+    
+    static vec3 cameraPosition = {0.0f, 0.0f, 5.0f};
+    cameraPosition += {0.0f, 0.0f, 0.001f};
+    static vec3 cameraTarget = {0.0f, 0.0f, 0.0f};
+    cameraTarget += {0.01f, 0.0f, 0.0f};
+    if (cameraTarget.x >= 99.99f)
+        cameraTarget.x = 0.f;
+
+    vec3 upVector = {0.0f, 1.0f, 0.0f};
+
+    matrix4x4 viewMatrix = matrix4x4::lookAt(cameraPosition, cameraTarget, upVector);
+
+    // Projection setup
+    float fieldOfView = 45.0f * (3.14159265f / 180.0f); // Convert to radians
+    float aspectRatio = 1280.0f / 720.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 100.0f;
+
+    matrix4x4 projectionMatrix = matrix4x4::perspective(fieldOfView, aspectRatio, nearPlane, farPlane);
+    
     for (auto &pair_obj : objs){
         std::string tag = pair_obj.first;
         gameobject* obj = pair_obj.second;
 
-        for (std::pair<int, int> edge : obj->Bounds.EDGES) {
-            vec3 Start = obj->Bounds.VERTEX[edge.first] * obj->Bounds.scale;
-            vec3 End = obj->Bounds.VERTEX[edge.second] * obj->Bounds.scale;
-            
-            Start = obj->Transform.rotation * Start;
-            End = obj->Transform.rotation * End;
+        // Set up cube transformation
+        vec3 objectPosition = {0.0f, 0.0f, 0.0f};
+        static float rotationAngle = 0.0f; // in radians
+        vec3 objectScale = {1.0f, 1.0f, 1.0f};
+        rotationAngle += 0.001;
 
-            Start += obj->Bounds.position;
-            End += obj->Bounds.position;
+        matrix4x4 modelMatrix = matrix4x4::translate(objectPosition)
+                            * matrix4x4::rotateY(rotationAngle)
+                            * matrix4x4::scale(objectScale);
 
-            vec2 screenStart = this->w2s(Start);
-            vec2 screenEnd = this->w2s(End);
+        // Combine to form the MVP matrix
+        matrix4x4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
 
-            this->pDrawing->render_line(screenStart, screenEnd);
+        std::vector<vec2> screenVertices;
+        
+        // Transform each vertex and convert to screen space
+        for (const vec3& vertex : obj->Bounds.VERTEX) {
+            vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
+            vec4 transformedVertex = v * mvpMatrix;
+
+            // Perform perspective divide
+            if (transformedVertex.w != 0.0f) {
+                transformedVertex.x /= transformedVertex.w;
+                transformedVertex.y /= transformedVertex.w;
+                transformedVertex.z /= transformedVertex.w;
+            }
+
+            // Convert from NDC to screen space
+            float screenX = (transformedVertex.x + 1.0f) * 0.5f * this->pWinSize->w;
+            float screenY = (1.0f - transformedVertex.y) * 0.5f * this->pWinSize->h; // Flip Y for screen coordinates
+            screenVertices.push_back({screenX, screenY});
+
         }
+
+        // Draw lines for each edge of the cube
+        for (const auto& edge : obj->Bounds.EDGES) {
+            const vec2& start = screenVertices[edge.first];
+            const vec2& end = screenVertices[edge.second];
+            this->pDrawing->render_line(start, end);
+        }
+
     }
 }

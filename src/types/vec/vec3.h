@@ -74,6 +74,14 @@ public:
         return *this;
     }
 
+    vec3 cross(const vec3& other) const {
+        return {
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x
+        };
+    }
+
     std::string to_string(){
         const int SIZE = 10;
         char bufferx[SIZE];
