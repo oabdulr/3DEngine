@@ -4,7 +4,7 @@
 class bound {
 public:
     float w, h = 0;
-    float scale = 10.f;
+    vec3 scale = {1.f, 1.f, 1.f};
     vec3 position;
 
     bound() {}

@@ -22,6 +22,9 @@ public:
     void set_title(std::string title);
     void events();
     void camera_render();
+    void register_eventcall(gameobject* object);
+    void event_call();
+    void lock_mouse(bool lock);
 
     SDL_Window* pWindow;
     SDL_Renderer* pRenderer;
@@ -37,4 +40,5 @@ private:
 
     camera* pCamera;
     std::unordered_map<std::string, gameobject*> objects {};
+    std::queue<std::pair<int, SDL_Event>> event_queue {};
 };

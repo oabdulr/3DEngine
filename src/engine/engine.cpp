@@ -16,7 +16,7 @@ bool engine::init(){
         return EXIT_FAILURE;
     }
 
-    this->pWindow = SDL_CreateWindow("SLD test", this->win_size.x, this->win_size.y, this->win_size.w, this->win_size.h, 0);
+    this->pWindow = SDL_CreateWindow("SLD test", this->win_size.x, this->win_size.y, this->win_size.w, this->win_size.h, SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS);
     if (!this->pWindow) {
         printf("Error: Failed to open window\nSDL Error: '%s'\n", SDL_GetError());
         return EXIT_FAILURE;
@@ -27,11 +27,16 @@ bool engine::init(){
         printf("Error: Failed to create renderer\nSDL Error: '%s'\n", SDL_GetError());
         return EXIT_FAILURE;
     }
-
+    
+    this->lock_mouse(true);
     this->pDrawing = new drawing(this->pRenderer, this->pWindow);
     this->create_camera();
 
     return EXIT_SUCCESS;
+}
+
+void engine::lock_mouse(bool lock){
+    SDL_SetWindowMouseGrab(this->pWindow, static_cast<SDL_bool>((int)lock));
 }
 
 bool engine::should_limit(){
@@ -66,7 +71,9 @@ int engine::mesure_fps(bool end){
 }
 
 camera* engine::create_camera(){
-    return this->pCamera = new camera(&this->win_size, this->pDrawing);
+    this->pCamera = new camera(&this->win_size, this->pDrawing);
+    this->create_object("camera", this->pCamera);
+    return this->pCamera;
 }
 
 camera* engine::get_pCamera(){
@@ -76,6 +83,8 @@ camera* engine::get_pCamera(){
 gameobject* engine::create_object(std::string tag, gameobject* object){
     if (this->objects.find(tag) != this->objects.end())
         return nullptr;
+
+    object->tag = tag;
     this->objects.emplace(tag, object);
     return this->objects[tag];
 }
@@ -92,6 +101,16 @@ void engine::events(){
             case SDL_QUIT:
                 this->isRunning = false;
                 break;
+            case SDL_MOUSEWHEEL:
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_KEYUP:
+            case SDL_KEYDOWN:
+            case SDL_MOUSEMOTION:
+                if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                    this->lock_mouse(false);
+
+                this->event_queue.push(std::pair(event.type, event));
             default:
                 break;
         }
@@ -99,5 +118,15 @@ void engine::events(){
 }
 
 void engine::camera_render(){
+    this->pCamera->update();
     this->pCamera->render(this->objects);
+}
+
+void engine::event_call(){
+    while (!this->event_queue.empty()) {
+        for (auto& event_pair : this->objects)
+            event_pair.second->event_input(this->event_queue.front().first, this->event_queue.front().second);
+        
+        this->event_queue.pop();
+    }
 }

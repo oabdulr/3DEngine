@@ -9,6 +9,12 @@ int main(int argc, char** argv) {
     cube da_cube = cube();
     if (!pEngine->create_object("da_cube", &da_cube))
         printf("Cube Creation Failed\n");
+    da_cube.Transform.position = {0.f, 0.f, 20.f};
+    cube da_cube2 = cube();
+    if (!pEngine->create_object("da_cube2", &da_cube2))
+        printf("Cube Creation Failed\n");
+    da_cube2.Transform.position = {1.f, 0.f, 15.f};
+
 
     while (pEngine->isRunning) {
         //pEngine->mesure_ticks(false);
@@ -17,11 +23,13 @@ int main(int argc, char** argv) {
         //if (!pEngine->should_limit()){
             //pEngine->mesure_fps(false);
 
+
             pEngine->pDrawing->set_draw_color(0, 100, 100, 100);
             pEngine->pDrawing->render_clear();
             pEngine->pDrawing->set_draw_color({0, 0, 0});
 
             pEngine->camera_render();
+            pEngine->event_call();
 
             //da_cube.Transform.rotation = da_cube.Transform.rotation * rotate_by_1;
             //da_cube.Transform.rotation *= rotate_by_1_z;

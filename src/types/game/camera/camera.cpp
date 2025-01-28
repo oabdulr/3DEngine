@@ -1,80 +1,109 @@
 #include "camera.h"
 
-vec2 camera::w2s(vec3 pos, float scale){
-    // Ensure z is positive to avoid division by zero or negative scaling
-    float z = std::max(pos.z, 0.1f);
+void camera::event_input(int event_type, SDL_Event event) {
+    switch (event_type){
+        case SDL_KEYDOWN:
+            if (this->assert_key("forward", event.key.keysym.scancode))
+                this->Transform.position += this->looking_direction * 0.5f;
+            else if (this->assert_key("back", event.key.keysym.scancode))
+                this->Transform.position -= this->looking_direction * 0.5f;
+            else if (this->assert_key("left", event.key.keysym.scancode))
+                this->Transform.position -= this->right * 0.5f;
+            else if (this->assert_key("right", event.key.keysym.scancode))
+                this->Transform.position += this->right * 0.5f;
+            break;
+        case SDL_MOUSEMOTION:
+            this->yaw += 0.001f * event.motion.xrel;
+            break;
+        default:
+            break;    
+    }
+}
 
-    // Apply perspective projection
-    float factor = this->fov / (this->fov + z);
-    return vec2(
-        (pos.x * factor) * scale,
-        (pos.y * factor) * scale
-    );
+void camera::set_fov(float fov){
+    this->fov = fov;
+    this->rad_fov = this->fov * this->radians;
+}
+
+void camera::rotate(float y, float p, bool set){
+    if (set){
+        this->yaw = y;
+        this->pitch = p;
+        return;
+    }
+
+    this->yaw += y;
+    this->pitch += p;
+}
+
+void camera::update(){
+    this->looking_direction = vec3(cos(this->pitch) * cos(this->yaw), 
+                                   sin(this->pitch),
+                                   cos(this->pitch) * sin(this->yaw));
+
+    this->right = this->looking_direction.cross(vec3(0.0f, 1.0f, 0.0f));
+    this->up = this->right.cross(this->looking_direction);
+
+    this->looking_direction = this->looking_direction.normalize();
+    this->right = this->right.normalize();
+    this->up = this->up.normalize();
+    
+    vec3 target = this->Transform.position + this->looking_direction;
+    this->view_matrix = matrix4x4::lookAt(this->Transform.position, target, this->up);
+    
+    float aspect_ratio = this->pWinSize->w / this->pWinSize->h;
+    this->proj_matrix = matrix4x4::perspective(this->rad_fov, aspect_ratio, this->near_plane, this->far_plane);
 }
 
 void camera::render(std::unordered_map<std::string, gameobject*> &objs){
-    
-    static vec3 cameraPosition = {0.0f, 0.0f, 5.0f};
-    cameraPosition += {0.0f, 0.0f, 0.001f};
-    static vec3 cameraTarget = {0.0f, 0.0f, 0.0f};
-    cameraTarget += {0.01f, 0.0f, 0.0f};
-    if (cameraTarget.x >= 99.99f)
-        cameraTarget.x = 0.f;
-
-    vec3 upVector = {0.0f, 1.0f, 0.0f};
-
-    matrix4x4 viewMatrix = matrix4x4::lookAt(cameraPosition, cameraTarget, upVector);
-
-    // Projection setup
-    float fieldOfView = 45.0f * (3.14159265f / 180.0f); // Convert to radians
-    float aspectRatio = 1280.0f / 720.0f;
-    float nearPlane = 0.1f;
-    float farPlane = 100.0f;
-
-    matrix4x4 projectionMatrix = matrix4x4::perspective(fieldOfView, aspectRatio, nearPlane, farPlane);
-    
     for (auto &pair_obj : objs){
         std::string tag = pair_obj.first;
         gameobject* obj = pair_obj.second;
+        if (obj == this) continue;
 
-        // Set up cube transformation
-        vec3 objectPosition = {0.0f, 0.0f, 0.0f};
-        static float rotationAngle = 0.0f; // in radians
-        vec3 objectScale = {1.0f, 1.0f, 1.0f};
-        rotationAngle += 0.001;
+        matrix4x4 mm =  matrix4x4::translate(obj->Transform.position)
+                      * matrix4x4::rotateY(obj->Transform.rotation.y)
+                      * matrix4x4::scale(obj->Bounds.scale);
 
-        matrix4x4 modelMatrix = matrix4x4::translate(objectPosition)
-                            * matrix4x4::rotateY(rotationAngle)
-                            * matrix4x4::scale(objectScale);
+        matrix4x4 mvm = this->proj_matrix * this->view_matrix * mm;
 
-        // Combine to form the MVP matrix
-        matrix4x4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
-
-        std::vector<vec2> screenVertices;
+        static std::vector<vec3> screenVertices {};
+        screenVertices.clear();
         
-        // Transform each vertex and convert to screen space
         for (const vec3& vertex : obj->Bounds.VERTEX) {
             vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
-            vec4 transformedVertex = v * mvpMatrix;
+            vec4 transformedVertex = v * mvm;
 
-            // Perform perspective divide
             if (transformedVertex.w != 0.0f) {
                 transformedVertex.x /= transformedVertex.w;
                 transformedVertex.y /= transformedVertex.w;
                 transformedVertex.z /= transformedVertex.w;
             }
 
-            // Convert from NDC to screen space
             float screenX = (transformedVertex.x + 1.0f) * 0.5f * this->pWinSize->w;
             float screenY = (1.0f - transformedVertex.y) * 0.5f * this->pWinSize->h; // Flip Y for screen coordinates
-            screenVertices.push_back({screenX, screenY});
+
+
+            screenVertices.push_back({screenX, screenY, transformedVertex.z});
 
         }
 
-        // Draw lines for each edge of the cube
-        for (const auto& edge : obj->Bounds.EDGES) {
-            const vec2& start = screenVertices[edge.first];
-            const vec2& end = screenVertices[edge.second];
+        for (auto& edge : obj->Bounds.EDGES) {
+            vec3& start = screenVertices[edge.first];
+            vec3& end = screenVertices[edge.second];
+
+            bool startx_out = start.x > this->pWinSize->w || start.x < 0;
+            bool endx_out = end.x > this->pWinSize->w || end.x < 0;
+
+            bool starty_out = start.y > this->pWinSize->h || start.y < 0;
+            bool endy_out = end.y > this->pWinSize->h || end.y < 0;
+
+            if (start.z < 0.0f || end.z < 0.0f)
+                continue;
+            if ((startx_out && endx_out) ||
+                (starty_out && endy_out))
+                continue;            
+
             this->pDrawing->render_line(start, end);
         }
 

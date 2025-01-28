@@ -27,6 +27,13 @@ public:
         return *this;
     }
 
+    vec3& operator-=(const vec3& r) {
+        x -= r.x;
+        y -= r.y;
+        z -= r.z;
+        return *this;
+    }
+
     vec3 operator-(const vec3 &r) const {
         return vec3(this->x - r.x, this->y - r.y, this->z - r.z);
     }
