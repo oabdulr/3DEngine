@@ -36,6 +36,7 @@ bool engine::init(){
 }
 
 void engine::lock_mouse(bool lock){
+    return;
     SDL_SetWindowMouseGrab(this->pWindow, static_cast<SDL_bool>((int)lock));
 }
 

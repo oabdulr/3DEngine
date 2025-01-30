@@ -6,15 +6,15 @@ int main(int argc, char** argv) {
     if (int init = pEngine->init())
         return init;
 
-    cube da_cube = cube();
-    if (!pEngine->create_object("da_cube", &da_cube))
-        printf("Cube Creation Failed\n");
-    da_cube.Transform.position = {0.f, 0.f, 20.f};
-    cube da_cube2 = cube();
-    if (!pEngine->create_object("da_cube2", &da_cube2))
-        printf("Cube Creation Failed\n");
-    da_cube2.Transform.position = {1.f, 0.f, 15.f};
-
+    
+    for (int z = -10; z < 10; z++){
+        for (int i = 0; i < 10; i++){
+            cube* da_cube = new cube();
+            if (!pEngine->create_object(std::string("da_cube") + std::to_string(i) + std::to_string(z), da_cube))
+                printf("Cube Creation Failed\n");
+            da_cube->Transform.position = {i * (2.f), -4.f, z * (2.f)};
+        }
+    }
 
     while (pEngine->isRunning) {
         //pEngine->mesure_ticks(false);

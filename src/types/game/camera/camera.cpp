@@ -11,9 +11,16 @@ void camera::event_input(int event_type, SDL_Event event) {
                 this->Transform.position -= this->right * 0.5f;
             else if (this->assert_key("right", event.key.keysym.scancode))
                 this->Transform.position += this->right * 0.5f;
+            else if (this->assert_key("view_up", event.key.keysym.scancode))
+                this->pitch += 0.01f;
+            else if (this->assert_key("view_down", event.key.keysym.scancode))
+                this->pitch -= 0.01f;
+            else if (this->assert_key("view_left", event.key.keysym.scancode))
+                this->yaw -= 0.01f;
+            else if (this->assert_key("view_right", event.key.keysym.scancode))
+                this->yaw += 0.01f;
             break;
         case SDL_MOUSEMOTION:
-            this->yaw += 0.001f * event.motion.xrel;
             break;
         default:
             break;    
@@ -74,17 +81,18 @@ void camera::render(std::unordered_map<std::string, gameobject*> &objs){
             vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
             vec4 transformedVertex = v * mvm;
 
-            if (transformedVertex.w != 0.0f) {
-                transformedVertex.x /= transformedVertex.w;
-                transformedVertex.y /= transformedVertex.w;
-                transformedVertex.z /= transformedVertex.w;
-            }
+            if (transformedVertex.w <= 0.0f)
+                continue;
 
+            transformedVertex.x /= transformedVertex.w;
+            transformedVertex.y /= transformedVertex.w;
+            transformedVertex.z /= transformedVertex.w;
+            
             float screenX = (transformedVertex.x + 1.0f) * 0.5f * this->pWinSize->w;
             float screenY = (1.0f - transformedVertex.y) * 0.5f * this->pWinSize->h; // Flip Y for screen coordinates
 
 
-            screenVertices.push_back({screenX, screenY, transformedVertex.z});
+            screenVertices.push_back({screenX, screenY, transformedVertex.w});
 
         }
 
@@ -98,7 +106,7 @@ void camera::render(std::unordered_map<std::string, gameobject*> &objs){
             bool starty_out = start.y > this->pWinSize->h || start.y < 0;
             bool endy_out = end.y > this->pWinSize->h || end.y < 0;
 
-            if (start.z < 0.0f || end.z < 0.0f)
+            if (start.z <= 0.0f || end.z <= 0.0f)
                 continue;
             if ((startx_out && endx_out) ||
                 (starty_out && endy_out))

@@ -5,10 +5,15 @@ class camera : public gameobject {
 public:
     camera(rect* pWinSize, drawing* pDrawing) : pWinSize(pWinSize), pDrawing(pDrawing)
     { 
-        this->add_keymap("forward", {SDL_SCANCODE_UP, SDL_SCANCODE_W});
-        this->add_keymap("back",    {SDL_SCANCODE_DOWN, SDL_SCANCODE_S});
-        this->add_keymap("right",   {SDL_SCANCODE_RIGHT, SDL_SCANCODE_D});
-        this->add_keymap("left",    {SDL_SCANCODE_LEFT, SDL_SCANCODE_A});
+        this->add_keymap("forward", {SDL_SCANCODE_W});
+        this->add_keymap("back",    {SDL_SCANCODE_S});
+        this->add_keymap("right",   {SDL_SCANCODE_D});
+        this->add_keymap("left",    {SDL_SCANCODE_A});
+
+        this->add_keymap("view_left",     {SDL_SCANCODE_LEFT});
+        this->add_keymap("view_right",    {SDL_SCANCODE_RIGHT});
+        this->add_keymap("view_up",    {SDL_SCANCODE_UP});
+        this->add_keymap("view_down",    {SDL_SCANCODE_DOWN});
 
         this->set_fov(this->fov); 
     }
