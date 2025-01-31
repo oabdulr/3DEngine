@@ -22,7 +22,7 @@ bool engine::init(){
         return EXIT_FAILURE;
     }
 
-    this->pRenderer = SDL_CreateRenderer(this->pWindow, -1, SDL_RENDERER_SOFTWARE);
+    this->pRenderer = SDL_CreateRenderer(this->pWindow, -1, SDL_RENDERER_PRESENTVSYNC);
     if (!this->pRenderer) {
         printf("Error: Failed to create renderer\nSDL Error: '%s'\n", SDL_GetError());
         return EXIT_FAILURE;
@@ -38,37 +38,6 @@ bool engine::init(){
 void engine::lock_mouse(bool lock){
     return;
     SDL_SetWindowMouseGrab(this->pWindow, static_cast<SDL_bool>((int)lock));
-}
-
-bool engine::should_limit(){
-    if (this->delta > 1000.f / this->FPS_LIMIT){
-        this->delta = 0;
-        return true;
-    }
-
-    return  false;
-}
-
-int engine::mesure_ticks(bool end){
-    if (!end){
-        this->tic_start_time = SDL_GetTicks();
-        return 0;
-    }
-
-    this->tic_frame_time = SDL_GetTicks() - this->tic_start_time;
-    this->delta += this->tic_frame_time;
-    return this->tic_frame_time;
-}
-
-int engine::mesure_fps(bool end){
-    if (!end){
-        this->fps_start_time = SDL_GetTicks();
-        return 0;
-    }
-
-    this->fps_frame_time = SDL_GetTicks() - this->fps_start_time;
-    this->fps = (this->fps_frame_time > 0) ? 1000.0f / this->fps_frame_time : 0.0f;
-    return this->fps;
 }
 
 camera* engine::create_camera(){

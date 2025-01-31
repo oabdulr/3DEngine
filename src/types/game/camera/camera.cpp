@@ -81,9 +81,6 @@ void camera::render(std::unordered_map<std::string, gameobject*> &objs){
             vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
             vec4 transformedVertex = v * mvm;
 
-            if (transformedVertex.w <= 0.0f)
-                continue;
-
             transformedVertex.x /= transformedVertex.w;
             transformedVertex.y /= transformedVertex.w;
             transformedVertex.z /= transformedVertex.w;
@@ -91,9 +88,7 @@ void camera::render(std::unordered_map<std::string, gameobject*> &objs){
             float screenX = (transformedVertex.x + 1.0f) * 0.5f * this->pWinSize->w;
             float screenY = (1.0f - transformedVertex.y) * 0.5f * this->pWinSize->h; // Flip Y for screen coordinates
 
-
             screenVertices.push_back({screenX, screenY, transformedVertex.w});
-
         }
 
         for (auto& edge : obj->Bounds.EDGES) {
