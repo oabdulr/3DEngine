@@ -25,4 +25,5 @@ obj->col = {1 + (rand() % 255), 1 + (rand() % 255), 1 + (rand() % 255)}; // vect
 created a simple software / cpu 3d rendering engine
 
 wont ever get anymore updates
+
 super unoptimized.
