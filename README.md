@@ -21,5 +21,6 @@ obj->col = {1 + (rand() % 255), 1 + (rand() % 255), 1 + (rand() % 255)}; // vect
 
 
 ### About this project
-I wanted to create a simple software / cpu rendering engine that didnt use any GPU calls, I used a lot of resorces creating it, visiting multiple different blogs and sites.
-most likely wont ever get anymore updates, and super unoptimized.
+created a simple software / cpu 3d rendering engine
+wont ever get anymore updates
+super unoptimized.
