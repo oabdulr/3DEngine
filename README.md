@@ -7,4 +7,14 @@ An attempt at a 3D Engine.
 ```
 gameobject* obj = new object();
 pEngine->create_object(std::string("name"), obj);
+
+
+// setting scale
+obj->Bounds.scale *= {8.f, 1.f, 8.f};
+
+// setting position, grid
+obj->Transform.position = {i * (obj->Bounds.scale.x * 2.f), -4.f, z * (obj->Bounds.scale.z * 2.f)};
+
+// setting color random.
+obj->col = {1 + (rand() % 255), 1 + (rand() % 255), 1 + (rand() % 255)}; // vector4
 ```
