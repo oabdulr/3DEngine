@@ -18,3 +18,8 @@ obj->Transform.position = {i * (obj->Bounds.scale.x * 2.f), -4.f, z * (obj->Boun
 // setting color random.
 obj->col = {1 + (rand() % 255), 1 + (rand() % 255), 1 + (rand() % 255)}; // vector4
 ```
+
+
+### About this project
+I wanted to create a simple software / cpu rendering engine that didnt use any GPU calls, I used a lot of resorces creating it, visiting multiple different blogs and sites.
+most likely wont ever get anymore updates, and super unoptimized.
