@@ -22,7 +22,7 @@ bool engine::init(){
         return EXIT_FAILURE;
     }
 
-    this->pRenderer = SDL_CreateRenderer(this->pWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+    this->pRenderer = SDL_CreateRenderer(this->pWindow, -1, SDL_RENDERER_SOFTWARE);
     if (!this->pRenderer) {
         printf("Error: Failed to create renderer\nSDL Error: '%s'\n", SDL_GetError());
         return EXIT_FAILURE;
@@ -61,6 +61,26 @@ gameobject* engine::create_object(std::string tag, gameobject* object){
 
 void engine::set_title(std::string title){
     SDL_SetWindowTitle(this->pWindow, title.c_str());
+}
+
+void engine::measure_ticks(bool end){
+    if (!end){
+        this->start_time = SDL_GetTicks64();
+        return;
+    }
+    
+    this->last_frame_time = SDL_GetTicks64() - this->start_time;
+    this->fps_list[0] += 1000.f / (float)this->last_frame_time;
+    this->fps_list[1]++;
+
+    if (SDL_GetTicks64() - fps_time  >= 1000){
+        this->fps_time = SDL_GetTicks64();
+        this->fps = this->fps_list[0] / this->fps_list[1];
+        if (this->fps <= 0 || this->fps == INFINITY)
+            this->fps = 0;
+        this->fps_list[0] = 0;
+        this->fps_list[1] = 1;
+    }
 }
 
 void engine::events(){

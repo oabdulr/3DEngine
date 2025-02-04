@@ -24,15 +24,16 @@ public:
     void update();
     void render(std::unordered_map<std::string, gameobject*> &objs);
     void set_fov(float fov);
-
+    void renderTriangleWithDepth(const vec3& v0, const vec3& v1, const vec3& v2, std::vector<float>& depthBuffer);
+    float computeDepth(float x, float y, const vec3& top, const vec3& mid, const vec3& bot);
     void event_input(int event_type, SDL_Event event); // override
 private:
     static constexpr float radians = (3.14159265f / 180.0f);
 
-    float fov = 45.f;
+    float fov = 90.f;
     float rad_fov = 0.f;
     float near_plane = 0.1f;
-    float far_plane = 100.f;
+    float far_plane = 1000.f;
 
     float yaw = 1.5f;
     float pitch = 0.f;
@@ -46,4 +47,8 @@ private:
 
     rect* pWinSize;
     drawing* pDrawing;
+
+    std::vector<float> tile_min_depth;
+    std::vector<float> z_buffer;
+    std::vector<draw_data> draw_buffer {};
 };

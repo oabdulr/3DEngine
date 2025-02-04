@@ -34,4 +34,5 @@ public:
 
     std::vector<vec3> VERTEX {};
     std::vector<std::pair<int, int>> EDGES {};
+    std::vector<std::tuple<int, int, int>> FACES {};
 };

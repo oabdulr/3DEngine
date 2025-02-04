@@ -15,6 +15,10 @@ public:
     operator bool() {
         return !this->is_zero();
     }
+
+    operator vec2 (){
+        return {x, y};
+    }
     
     vec3 operator+(const vec3 &r) const {
         return vec3(this->x + r.x, this->y + r.y, this->z + r.z);

@@ -13,6 +13,7 @@ public:
         return {(int)x, (int)y, (int)w, (int)h};
     }
 
+
     bool is_inside( vec3 position )
     {
         if ( this->x > position.x || this->y > position.y || this->z > position.z)

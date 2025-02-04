@@ -2,23 +2,25 @@
 
 void camera::event_input(int event_type, SDL_Event event) {
     switch (event_type){
+        case SDL_KEYMAPCHANGED:
+        case SDL_KEYUP:
         case SDL_KEYDOWN:
             if (this->assert_key("forward", event.key.keysym.scancode))
-                this->Transform.position += this->looking_direction * 0.5f;
-            else if (this->assert_key("back", event.key.keysym.scancode))
-                this->Transform.position -= this->looking_direction * 0.5f;
-            else if (this->assert_key("left", event.key.keysym.scancode))
-                this->Transform.position -= this->right * 0.5f;
-            else if (this->assert_key("right", event.key.keysym.scancode))
-                this->Transform.position += this->right * 0.5f;
-            else if (this->assert_key("view_up", event.key.keysym.scancode))
-                this->pitch += 0.01f;
-            else if (this->assert_key("view_down", event.key.keysym.scancode))
-                this->pitch -= 0.01f;
-            else if (this->assert_key("view_left", event.key.keysym.scancode))
-                this->yaw -= 0.01f;
-            else if (this->assert_key("view_right", event.key.keysym.scancode))
-                this->yaw += 0.01f;
+                this->Transform.position += this->looking_direction;
+            if (this->assert_key("back", event.key.keysym.scancode))
+                this->Transform.position -= this->looking_direction;
+            if (this->assert_key("left", event.key.keysym.scancode))
+                this->Transform.position -= this->right;
+            if (this->assert_key("right", event.key.keysym.scancode))
+                this->Transform.position += this->right;
+            if (this->assert_key("view_up", event.key.keysym.scancode))
+                this->pitch += 0.1f;
+            if (this->assert_key("view_down", event.key.keysym.scancode))
+                this->pitch -= 0.1f;
+            if (this->assert_key("view_left", event.key.keysym.scancode))
+                this->yaw -= 0.1f;
+            if (this->assert_key("view_right", event.key.keysym.scancode))
+                this->yaw += 0.1f;
             break;
         case SDL_MOUSEMOTION:
             break;
@@ -26,6 +28,11 @@ void camera::event_input(int event_type, SDL_Event event) {
             break;    
     }
 }
+
+static inline float edge_function(const vec2& a, const vec2& b, const vec2& c) {
+    return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
+}
+
 
 void camera::set_fov(float fov){
     this->fov = fov;
@@ -62,53 +69,94 @@ void camera::update(){
     this->proj_matrix = matrix4x4::perspective(this->rad_fov, aspect_ratio, this->near_plane, this->far_plane);
 }
 
-void camera::render(std::unordered_map<std::string, gameobject*> &objs){
-    for (auto &pair_obj : objs){
+void camera::render(std::unordered_map<std::string, gameobject*> &objs) {
+    const int bufferWidth = this->pWinSize->w;
+    const int bufferHeight = this->pWinSize->h;
+    const size_t bufferSize = bufferWidth * bufferHeight;
+
+    this->z_buffer = std::vector<float>(bufferSize, 1.0f);
+
+    for (auto &pair_obj : objs) {
         std::string tag = pair_obj.first;
         gameobject* obj = pair_obj.second;
         if (obj == this) continue;
 
-        matrix4x4 mm =  matrix4x4::translate(obj->Transform.position)
+        matrix4x4 mm = matrix4x4::translate(obj->Transform.position)
                       * matrix4x4::rotateY(obj->Transform.rotation.y)
                       * matrix4x4::scale(obj->Bounds.scale);
 
         matrix4x4 mvm = this->proj_matrix * this->view_matrix * mm;
 
-        static std::vector<vec3> screenVertices {};
-        screenVertices.clear();
+        std::vector<vec4> screenVertices;
+        screenVertices.reserve(obj->Bounds.VERTEX.size());
         
         for (const vec3& vertex : obj->Bounds.VERTEX) {
             vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
             vec4 transformedVertex = v * mvm;
 
-            transformedVertex.x /= transformedVertex.w;
-            transformedVertex.y /= transformedVertex.w;
-            transformedVertex.z /= transformedVertex.w;
-            
-            float screenX = (transformedVertex.x + 1.0f) * 0.5f * this->pWinSize->w;
-            float screenY = (1.0f - transformedVertex.y) * 0.5f * this->pWinSize->h; // Flip Y for screen coordinates
+            float w_clip = transformedVertex.w;
+            if (w_clip == 0.0f) continue;
 
-            screenVertices.push_back({screenX, screenY, transformedVertex.w});
+            float rcp_w = 1.0f / w_clip;
+            transformedVertex.x *= rcp_w;
+            transformedVertex.y *= rcp_w;
+            transformedVertex.z *= rcp_w;
+
+            float screenX = (transformedVertex.x + 1.0f) * 0.5f * bufferWidth;
+            float screenY = (1.0f - transformedVertex.y) * 0.5f * bufferHeight;
+
+            screenVertices.emplace_back(screenX, screenY, transformedVertex.z, rcp_w);
         }
 
-        for (auto& edge : obj->Bounds.EDGES) {
-            vec3& start = screenVertices[edge.first];
-            vec3& end = screenVertices[edge.second];
+        this->pDrawing->set_draw_color(obj->col);
+        for (const auto& face : obj->Bounds.FACES) {
+            const vec4& v0 = screenVertices[std::get<0>(face)];
+            const vec4& v1 = screenVertices[std::get<1>(face)];
+            const vec4& v2 = screenVertices[std::get<2>(face)];
 
-            bool startx_out = start.x > this->pWinSize->w || start.x < 0;
-            bool endx_out = end.x > this->pWinSize->w || end.x < 0;
+            if (v0.z <= 0 || v1.z <= 0 || v2.z <= 0) continue;
 
-            bool starty_out = start.y > this->pWinSize->h || start.y < 0;
-            bool endy_out = end.y > this->pWinSize->h || end.y < 0;
+            float minX = std::floor(std::min({v0.x, v1.x, v2.x}));
+            float maxX = std::ceil(std::max({v0.x, v1.x, v2.x}));
+            float minY = std::floor(std::min({v0.y, v1.y, v2.y}));
+            float maxY = std::ceil(std::max({v0.y, v1.y, v2.y}));
 
-            if (start.z <= 0.0f || end.z <= 0.0f)
-                continue;
-            if ((startx_out && endx_out) ||
-                (starty_out && endy_out))
-                continue;            
+            minX = std::max(0.f, minX);
+            maxX = std::min(bufferWidth - 1.f, maxX);
+            minY = std::max(0.f, minY);
+            maxY = std::min(bufferHeight - 1.f, maxY);
 
-            this->pDrawing->render_line(start, end);
+            vec2 a(v0.x, v0.y);
+            vec2 b(v1.x, v1.y);
+            vec2 c(v2.x, v2.y);
+            float area = edge_function(a, b, c);
+            if (area <= 0) continue;
+
+            for (float y = minY; y <= maxY; ++y) {
+                for (float x = minX; x <= maxX; ++x) {
+                    vec2 pt(x + 0.5f, y + 0.5f);
+                    float w0 = edge_function(b, c, pt);
+                    float w1 = edge_function(c, a, pt);
+                    float w2 = edge_function(a, b, pt);
+
+                    if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+                        float alpha = w0 / area;
+                        float beta = w1 / area;
+                        float gamma = w2 / area;
+
+                        float interpolated_rcp_w = alpha * v0.w + beta * v1.w + gamma * v2.w;
+                        if (interpolated_rcp_w == 0.0f) continue;
+
+                        float interpolated_z = (alpha * v0.z * v0.w + beta * v1.z * v1.w + gamma * v2.z * v2.w) / interpolated_rcp_w;
+
+                        int index = y * bufferWidth + x;
+                        if (interpolated_z < this->z_buffer[index]) {
+                            this->z_buffer[index] = interpolated_z;
+                            this->pDrawing->render_pixel({x, y});
+                        }
+                    }
+                }
+            }
         }
-
     }
 }

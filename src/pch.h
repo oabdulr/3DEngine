@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <bits/stdc++.h>
 #include <queue>
 #include <unordered_map>
 #include <chrono>
@@ -23,6 +24,7 @@
 #include "types/vec/bound.h"
 
 #include "types/color/color4.h"
+#include "types/vec/draw_data.h"
 
 #include "types/font/font.h"
 #include "types/texture/font_texture.h"

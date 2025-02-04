@@ -28,6 +28,10 @@ public:
         return vec4(this->x * r.x, this->y * r.y, this->z * r.z, this->w * r.w);
     }
 
+    vec2 xy() const {
+        return {this->x, this->y};
+    }
+
     float dot(const vec4 &r) const {
         return this->x * r.x + this->y * r.y + this->z * r.z + this->w * r.w;
     }

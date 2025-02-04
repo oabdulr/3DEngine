@@ -6,6 +6,8 @@ public:
     float r, g, b, alpha;
     color4(float r, float g, float b, float alpha) : r(r), g(g), b(b), alpha(alpha), vec4(r, g, b, alpha) {}
     color4(float r, float g, float b) : r(r), g(g), b(b), alpha(255), vec4(r, g, b, 255) {}
+    color4(int r, int g, int b) : r(r), g(g), b(b), alpha(255), vec4(r, g, b, 255) {}
+    color4() : r(0), g(0), b(0), alpha(255), vec4(r, g, b, 255) {}
 
     void convert_to_idk(){
         this->x /= 255;

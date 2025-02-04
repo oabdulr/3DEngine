@@ -11,7 +11,7 @@ public:
     bool quit();
     bool init();
     bool should_limit();
-    int measure_ticks(bool end);
+    void measure_ticks(bool end);
     //int mesure_ticks(bool end);
 
     camera* create_camera();
@@ -33,6 +33,8 @@ public:
     float fps = 0.f;
 private:
     const float FPS_LIMIT = 144.f;
+    float fps_list[2] = {0, 1};
+    uint64_t start_time, last_frame_time, fps_time;
     rect win_size;
 
     camera* pCamera;

@@ -30,6 +30,9 @@ public:
 
     std::unordered_map<std::string, std::vector<int>> keymap {};
     std::string tag;
+
+    color4 col;
+
     transform Transform;
     bound Bounds;
 };
