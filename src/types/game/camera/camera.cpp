@@ -1,4 +1,6 @@
 #include "camera.h"
+#include <xmmintrin.h>  // SSE intrinsics
+#include <emmintrin.h>  // SSE2 intrinsics
 
 void camera::event_input(int event_type, SDL_Event event) {
     switch (event_type){
@@ -69,15 +71,15 @@ void camera::update(){
     this->proj_matrix = matrix4x4::perspective(this->rad_fov, aspect_ratio, this->near_plane, this->far_plane);
 }
 
+
 void camera::render(std::unordered_map<std::string, gameobject*> &objs) {
-    const int bufferWidth = this->pWinSize->w;
+    const int bufferWidth  = this->pWinSize->w;
     const int bufferHeight = this->pWinSize->h;
     const size_t bufferSize = bufferWidth * bufferHeight;
 
-    this->z_buffer = std::vector<float>(bufferSize, 1.0f);
+    this->z_buffer.assign(bufferSize, 1.0f);
 
     for (auto &pair_obj : objs) {
-        std::string tag = pair_obj.first;
         gameobject* obj = pair_obj.second;
         if (obj == this) continue;
 
@@ -89,72 +91,91 @@ void camera::render(std::unordered_map<std::string, gameobject*> &objs) {
 
         std::vector<vec4> screenVertices;
         screenVertices.reserve(obj->Bounds.VERTEX.size());
-        
         for (const vec3& vertex : obj->Bounds.VERTEX) {
-            vec4 v = vec4(vertex.x, vertex.y, vertex.z, 1.0f);
+            vec4 v(vertex.x, vertex.y, vertex.z, 1.0f);
             vec4 transformedVertex = v * mvm;
 
-            float w_clip = transformedVertex.w;
-            if (w_clip == 0.0f) continue;
-
-            float rcp_w = 1.0f / w_clip;
-            transformedVertex.x *= rcp_w;
-            transformedVertex.y *= rcp_w;
-            transformedVertex.z *= rcp_w;
+            if (transformedVertex.w == 0.0f) continue;
+            float invW = 1.0f / transformedVertex.w;
+            transformedVertex.x *= invW;
+            transformedVertex.y *= invW;
+            transformedVertex.z *= invW;
 
             float screenX = (transformedVertex.x + 1.0f) * 0.5f * bufferWidth;
             float screenY = (1.0f - transformedVertex.y) * 0.5f * bufferHeight;
 
-            screenVertices.emplace_back(screenX, screenY, transformedVertex.z, rcp_w);
+            screenVertices.emplace_back(screenX, screenY, transformedVertex.z, invW);
         }
 
         this->pDrawing->set_draw_color(obj->col);
+
         for (const auto& face : obj->Bounds.FACES) {
-            const vec4& v0 = screenVertices[std::get<0>(face)];
-            const vec4& v1 = screenVertices[std::get<1>(face)];
-            const vec4& v2 = screenVertices[std::get<2>(face)];
+            const int idx0 = std::get<0>(face);
+            const int idx1 = std::get<1>(face);
+            const int idx2 = std::get<2>(face);
+
+            const vec4& v0 = screenVertices[idx0];
+            const vec4& v1 = screenVertices[idx1];
+            const vec4& v2 = screenVertices[idx2];
 
             if (v0.z <= 0 || v1.z <= 0 || v2.z <= 0) continue;
 
-            float minX = std::floor(std::min({v0.x, v1.x, v2.x}));
-            float maxX = std::ceil(std::max({v0.x, v1.x, v2.x}));
-            float minY = std::floor(std::min({v0.y, v1.y, v2.y}));
-            float maxY = std::ceil(std::max({v0.y, v1.y, v2.y}));
+            int minX = std::max(0, static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x}))));
+            int maxX = std::min(bufferWidth - 1, static_cast<int>(std::ceil (std::max({v0.x, v1.x, v2.x}))));
+            int minY = std::max(0, static_cast<int>(std::floor(std::min({v0.y, v1.y, v2.y}))));
+            int maxY = std::min(bufferHeight - 1, static_cast<int>(std::ceil (std::max({v0.y, v1.y, v2.y}))));
 
-            minX = std::max(0.f, minX);
-            maxX = std::min(bufferWidth - 1.f, maxX);
-            minY = std::max(0.f, minY);
-            maxY = std::min(bufferHeight - 1.f, maxY);
 
-            vec2 a(v0.x, v0.y);
-            vec2 b(v1.x, v1.y);
-            vec2 c(v2.x, v2.y);
-            float area = edge_function(a, b, c);
+            auto computeEdgeCoeffs = [](const vec4 &a, const vec4 &b) -> std::tuple<float, float, float> {
+                float A = b.y - a.y;
+                float B = -(b.x - a.x);
+                float C = -(A * a.x + B * a.y);
+                return {A, B, C};
+            };
+
+            float A0, B0, C0;
+            std::tie(A0, B0, C0) = computeEdgeCoeffs(v1, v2);
+            float A1, B1, C1;
+            std::tie(A1, B1, C1) = computeEdgeCoeffs(v2, v0);
+            float A2, B2, C2;
+            std::tie(A2, B2, C2) = computeEdgeCoeffs(v0, v1); 
+
+            float area = A2 * v2.x + B2 * v2.y + C2;
             if (area <= 0) continue;
 
-            for (float y = minY; y <= maxY; ++y) {
-                for (float x = minX; x <= maxX; ++x) {
-                    vec2 pt(x + 0.5f, y + 0.5f);
-                    float w0 = edge_function(b, c, pt);
-                    float w1 = edge_function(c, a, pt);
-                    float w2 = edge_function(a, b, pt);
+            for (int y = minY; y <= maxY; ++y) {
+                float px = minX + 0.5f;
+                float py = y + 0.5f;
+                float w0 = A0 * px + B0 * py + C0;
+                float w1 = A1 * px + B1 * py + C1;
+                float w2 = A2 * px + B2 * py + C2;
 
+                const float stepX0 = A0;
+                const float stepX1 = A1;
+                const float stepX2 = A2;
+
+                for (int x = minX; x <= maxX; ++x) {
                     if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
                         float alpha = w0 / area;
-                        float beta = w1 / area;
+                        float beta  = w1 / area;
                         float gamma = w2 / area;
 
                         float interpolated_rcp_w = alpha * v0.w + beta * v1.w + gamma * v2.w;
-                        if (interpolated_rcp_w == 0.0f) continue;
-
-                        float interpolated_z = (alpha * v0.z * v0.w + beta * v1.z * v1.w + gamma * v2.z * v2.w) / interpolated_rcp_w;
-
-                        int index = y * bufferWidth + x;
-                        if (interpolated_z < this->z_buffer[index]) {
-                            this->z_buffer[index] = interpolated_z;
-                            this->pDrawing->render_pixel({x, y});
+                        if (interpolated_rcp_w != 0.0f) {
+                            float interpolated_z = (alpha * v0.z * v0.w +
+                                                    beta  * v1.z * v1.w +
+                                                    gamma * v2.z * v2.w) / interpolated_rcp_w;
+                            int index = y * bufferWidth + x;
+                            if (interpolated_z < this->z_buffer[index]) {
+                                this->z_buffer[index] = interpolated_z;
+                                this->pDrawing->render_pixel({ (float)x, (float)y });
+                            }
                         }
                     }
+
+                    w0 += stepX0;
+                    w1 += stepX1;
+                    w2 += stepX2;
                 }
             }
         }

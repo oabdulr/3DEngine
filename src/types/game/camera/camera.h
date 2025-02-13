@@ -18,6 +18,7 @@ public:
         this->set_fov(this->fov); 
     }
     
+    
     vec2 w2s(vec3 pos, float scale = 1.0f);
 
     void rotate(float y, float p, bool set = false);
@@ -52,3 +53,4 @@ private:
     std::vector<float> z_buffer;
     std::vector<draw_data> draw_buffer {};
 };
+

@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <pthread.h>
 
 bool engine::quit(){
     TTF_Quit();
